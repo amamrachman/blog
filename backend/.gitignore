@@ -1,0 +1,51 @@
+# Binary / Build
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/main
+/tmp/
+/bin/
+/dist/
+
+# Database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Dependency
+/vendor/
+
+# Logs
+*.log
+logs/
+
+# Air live reload
+tmp/
+
+# Test coverage
+coverage.out
+coverage.html
+*.cover
+
+# Go workspace
+go.work
+go.work.sum
