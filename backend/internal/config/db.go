@@ -4,6 +4,7 @@ package config
 import (
 	"log"
 
+	"github.com/amamrachman/blog-platform/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -22,10 +23,10 @@ func ConnectDB() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	log.Println("Database connected: blog.db")
+	log.Println("Database connected")
 }
 
 func Migrate() {
-
-	DB.AutoMigrate()
+	DB.AutoMigrate(&models.User{}, &models.Post{})
+	log.Println("Database migrated")
 }
