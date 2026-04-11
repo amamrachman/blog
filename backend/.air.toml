@@ -1,10 +1,9 @@
-# .air.toml
 root = "."
 tmp_dir = "tmp"
 
 [build]
-  bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ./cmd/api"
+  entrypoint = "./tmp/main.exe"
+  cmd = "go build -o ./tmp/main.exe ./cmd/api"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor"]
   exclude_file = []
