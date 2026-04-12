@@ -1,19 +1,71 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-export async function fetchPosts(page = 1, limit = 10) {
-  const res = await fetch(`${API_URL}/posts?page=${page}&limit=${limit}`);
-  if (!res.ok) throw new Error('Failed to fetch posts');
-  return res.json();
+function getToken(): string | null {
+  return localStorage.getItem("token");
 }
 
-export async function fetchPost(id: string) {
-  const res = await fetch(`${API_URL}/posts/${id}`);
-  if (!res.ok) throw new Error('Failed to fetch post');
-  return res.json();
+async function fetchWithAuth(url: string, options: RequestInit = {}) {
+  const token = getToken();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${url}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
 }
 
-export async function fetchPostBySlug(slug: string) {
-  const res = await fetch(`${API_URL}/posts/slug/${slug}`);
-  if (!res.ok) throw new Error('Failed to fetch post');
-  return res.json();
-}
+export const fetchPosts = () => fetchWithAuth("/posts");
+export const fetchPostById = (id: number) => fetchWithAuth(`/posts/${id}`);
+export const fetchPostBySlug = (slug: string) =>
+  fetchWithAuth(`/posts/slug/${slug}`);
+
+export const login = (email: string, password: string) =>
+  fetchWithAuth("/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+
+export const register = (email: string, password: string, name: string) =>
+  fetchWithAuth("/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, name }),
+  });
+
+export const getMe = () => fetchWithAuth("/me");
+
+export const createPost = (data: { title: string; content: string }) =>
+  fetchWithAuth("/posts", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const updatePost = (
+  id: number,
+  data: { title?: string; content?: string },
+) =>
+  fetchWithAuth(`/posts/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+
+export const deletePost = (id: number) =>
+  fetchWithAuth(`/posts/${id}`, {
+    method: "DELETE",
+  });
