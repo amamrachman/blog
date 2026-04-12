@@ -15,3 +15,24 @@ export interface Post {
   created_at: string;
   updated_at: string;
 }
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface RegisterInput {
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface CreatePostInput {
+  title: string;
+  content: string;
+}
+
+export interface UpdatePostInput {
+  title?: string;
+  content?: string;
+}
