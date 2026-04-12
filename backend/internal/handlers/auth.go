@@ -80,3 +80,18 @@ func Login(c fiber.Ctx) error {
 		},
 	})
 }
+
+func Me(c fiber.Ctx) error {
+	userID := utils.GetUserIDFromContext(c)
+	
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+	
+	return c.JSON(fiber.Map{
+		"id":    user.ID,
+		"email": user.Email,
+		"name":  user.Name,
+	})
+}

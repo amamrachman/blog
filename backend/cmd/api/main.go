@@ -33,6 +33,7 @@ func main() {
 		AllowMethods: []string{
 			"GET",
 			"POST",
+			"PATCH",
 			"PUT",
 			"DELETE",
 			"OPTIONS",
@@ -53,6 +54,7 @@ func main() {
 	api.Get("/posts/slug/:slug", handlers.GetPostBySlug)
 
 	auth := api.Group("", middleware.AuthRequired())
+	auth.Get("/me", handlers.Me)
 	auth.Post("/posts", handlers.CreatePost)
 	auth.Patch("/posts/:id", handlers.UpdatePost)
 	auth.Delete("/posts/:id", handlers.DeletePost)
