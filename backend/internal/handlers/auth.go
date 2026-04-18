@@ -2,6 +2,8 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/amamrachman/blog-platform/internal/config"
 	"github.com/amamrachman/blog-platform/internal/models"
 	"github.com/amamrachman/blog-platform/internal/utils"
@@ -41,14 +43,21 @@ func Register(c fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Email already exists"})
 	}
 
+	token, err := utils.GenerateToken(user.ID, user.Email)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate token"})
+	}
+
 	return c.Status(201).JSON(fiber.Map{
 		"message": "User created",
+		"token": token,
 		"user": fiber.Map{
 			"id":    user.ID,
 			"email": user.Email,
 			"name":  user.Name,
 		},
 	})
+
 }
 
 func Login(c fiber.Ctx) error {
@@ -83,15 +92,16 @@ func Login(c fiber.Ctx) error {
 
 func Me(c fiber.Ctx) error {
 	userID := utils.GetUserIDFromContext(c)
-	
+
 	var user models.User
 	if err := config.DB.First(&user, userID).Error; err != nil {
 		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
 	}
-	
+
 	return c.JSON(fiber.Map{
-		"id":    user.ID,
-		"email": user.Email,
-		"name":  user.Name,
+		"id":         user.ID,
+		"email":      user.Email,
+		"name":       user.Name,
+		"created_at": user.CreatedAt.Format(time.RFC3339),
 	})
 }
