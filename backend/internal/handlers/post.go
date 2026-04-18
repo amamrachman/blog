@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ func CreatePost(c fiber.Ctx) error {
 
 	post := models.Post{
 		Title:    input.Title,
-		Content:  input.Content,
+		Content:  json.RawMessage(input.Content),
 		Slug:     slug,
 		AuthorID: userID,
 	}
@@ -46,8 +47,8 @@ func CreatePost(c fiber.Ctx) error {
 func GetPosts(c fiber.Ctx) error {
 	var posts []models.Post
 
-	page := fiber.Query[int](c, "page", 1)
-	limit := fiber.Query[int](c, "limit", 10)
+	page := fiber.Query(c, "page", 1)
+	limit := fiber.Query(c, "limit", 10)
 	offset := (page - 1) * limit
 
 	config.DB.Preload("Author").

@@ -1,3 +1,5 @@
+import type { CreatePostInput, UpdatePostInput } from "@/types";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 function getToken(): string | null {
@@ -50,7 +52,7 @@ export const register = (email: string, password: string, name: string) =>
 
 export const getMe = () => fetchWithAuth("/me");
 
-export const createPost = (data: { title: string; content: string }) =>
+export const createPost = (data: CreatePostInput) =>
   fetchWithAuth("/posts", {
     method: "POST",
     body: JSON.stringify(data),
@@ -58,7 +60,7 @@ export const createPost = (data: { title: string; content: string }) =>
 
 export const updatePost = (
   id: number,
-  data: { title?: string; content?: string },
+  data: UpdatePostInput,
 ) =>
   fetchWithAuth(`/posts/${id}`, {
     method: "PATCH",

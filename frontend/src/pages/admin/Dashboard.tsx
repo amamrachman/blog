@@ -4,6 +4,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { fetchPosts, deletePost } from "@/api/client";
 import type { Post } from "@/types";
 import { useAuth } from "@/context/useAuth";
+import { countWordsFromTiptap } from "@/utils/tiptap";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -56,7 +57,7 @@ export default function Dashboard() {
   const avgWords =
     posts.length > 0
       ? Math.round(
-          posts.reduce((acc, p) => acc + p.content.split(/\s+/).length, 0) /
+          posts.reduce((acc, p) => acc + countWordsFromTiptap(p.content), 0) /
             posts.length,
         )
       : 0;
@@ -207,7 +208,7 @@ export default function Dashboard() {
                           </Link>
                         </td>
                         <td className="py-3 px-4 text-foreground/80">
-                          {post.content.split(/\s+/).length}
+                          {countWordsFromTiptap(post.content)}
                         </td>
                         <td className="py-3 px-4 text-foreground/80">
                           {new Date(post.created_at).toLocaleDateString()}
