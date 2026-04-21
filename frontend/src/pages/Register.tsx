@@ -64,7 +64,7 @@ export default function Register() {
       </div>
 
       <div className="flex-1 h-full overflow-y-auto bg-background">
-        <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-full flex items-center justify-center pt-12 pb-0 px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-md">
             <div className="text-center lg:hidden mb-8">
               <div className="mx-auto mb-4 h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -78,7 +78,7 @@ export default function Register() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+            <div className="rounded-xl border border-border bg-card sm:p-8 shadow-sm">
               <div className="hidden lg:block mb-8 text-center">
                 <div className="mx-auto mb-4 h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center">
                   <span className="text-2xl font-bold text-primary">B</span>
@@ -215,11 +215,11 @@ export default function Register() {
                   </Link>
                 </p>
               </div>
-            </div>
 
-            <footer className="py-6 text-center text-xs text-foreground/40 border-t border-border/50">
-              <p>© 2026 BlogHub. All rights reserved.</p>
-            </footer>
+              <footer className="text-center text-xs text-foreground/40 border-t border-border/50">
+                <p>© 2026 BlogHub. All rights reserved.</p>
+              </footer>
+            </div>
           </div>
         </div>
       </div>
