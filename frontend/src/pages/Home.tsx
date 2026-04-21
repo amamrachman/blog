@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PostCard } from "@/components/PostCard";
 import { fetchPosts } from "@/api/client";
+import { getTextFromJSON } from "@/utils/tiptap";
 import type { Post } from "@/types";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
@@ -29,11 +30,22 @@ export default function Home() {
     }
   }
 
-  const filteredPosts = posts.filter(
-    (post) =>
+  const filteredPosts = posts.filter((post) => {
+    let contentText = "";
+    if (typeof post.content === "string") {
+      contentText = post.content;
+    } else {
+      try {
+        contentText = getTextFromJSON(JSON.parse(post.content));
+      } catch {
+        contentText = "";
+      }
+    }
+    return (
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+      contentText.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   if (loading) {
     return (
