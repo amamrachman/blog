@@ -216,6 +216,10 @@ export default function Register() {
                 </p>
               </div>
             </div>
+
+            <footer className="py-6 text-center text-xs text-foreground/40 border-t border-border/50">
+              <p>© 2026 BlogHub. All rights reserved.</p>
+            </footer>
           </div>
         </div>
       </div>
