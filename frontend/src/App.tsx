@@ -7,11 +7,14 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/admin/Dashboard";
 import EditPost from "@/pages/admin/EditPost";
-import CreatePost from "./pages/admin/CreatePost";
+import CreatePost from "@/pages/admin/CreatePost";
+import { Toaster } from "sonner";
 
 function App() {
   return (
     <Layout>
+      <Toaster richColors position="top-right" />
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/post/:slug" element={<PostDetail />} />
