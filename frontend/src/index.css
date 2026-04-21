@@ -128,7 +128,6 @@
   outline: none !important;
 }
 
-/* Memastikan area kosong tetap bisa diklik untuk fokus */
 .tiptap-content .ProseMirror {
   display: flex;
   flex-direction: column;

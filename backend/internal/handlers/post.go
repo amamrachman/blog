@@ -96,15 +96,15 @@ func UpdatePost(c fiber.Ctx) error {
 	}
 
 	var input struct {
-		Title   *string `json:"title"`
-		Content *string `json:"content"`
+		Title   *string          `json:"title"`
+		Content *json.RawMessage `json:"content"`
 	}
 
 	if err := c.Bind().Body(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 
 	if input.Title != nil && *input.Title != "" {
 		updates["title"] = *input.Title

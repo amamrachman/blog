@@ -12,8 +12,6 @@ export function PostCard({ post }: PostCardProps) {
     day: "numeric",
   });
 
-  const excerpt = post.content.slice(0, 150).replace(/\n/g, " ") + "...";
-
   return (
     <article className="group flex flex-col border border-border rounded-xl bg-card overflow-hidden hover:border-primary/50 transition">
       <div className="p-6 flex-1 flex flex-col">
@@ -32,13 +30,9 @@ export function PostCard({ post }: PostCardProps) {
           <Link to={`/post/${post.slug}`}>{post.title}</Link>
         </h3>
 
-        <p className="text-foreground/70 text-sm line-clamp-3 mb-4 flex-1">
-          {excerpt}
-        </p>
-
         <Link
           to={`/post/${post.slug}`}
-          className="inline-flex items-center text-primary text-sm font-medium hover:underline"
+          className="inline-flex items-center text-primary text-sm font-medium hover:underline mt-auto"
         >
           Read more
           <svg

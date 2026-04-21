@@ -41,7 +41,6 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
 
   return (
     <div className="flex flex-col border rounded-lg overflow-hidden bg-white h-full min-h-125">
-      {/* TOOLBAR */}
       <div className="flex-none flex flex-wrap gap-2 p-2 border-b bg-gray-50">
         <button
           type="button"
@@ -88,7 +87,6 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
         </button>
       </div>
 
-      {/* AREA KETIK: Menggunakan flex-1 agar memenuhi sisa ruang */}
       <div className="flex-1 overflow-y-auto p-4 focus:outline-none">
         <EditorContent
           className="tiptap-content h-full prose max-w-none prose-headings:scroll-m-20 prose-p:scroll-m-6"
