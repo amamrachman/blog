@@ -10,11 +10,9 @@ export default function CreatePost() {
   const [formData, setFormData] = useState<{
     title: string;
     content: JSONContent | undefined;
-    excerpt: string;
   }>({
     title: "",
     content: undefined,
-    excerpt: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +64,7 @@ export default function CreatePost() {
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
 
-      <main className="flex-1 lg:ml-64 py-8 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -130,28 +128,6 @@ export default function CreatePost() {
               </p>
             </div>
 
-            {/* Excerpt */}
-            <div>
-              <label
-                htmlFor="excerpt"
-                className="block text-sm font-medium text-foreground mb-2"
-              >
-                Excerpt
-              </label>
-              <textarea
-                id="excerpt"
-                name="excerpt"
-                value={formData.excerpt}
-                onChange={handleChange}
-                placeholder="Brief summary of your post (optional, for future use)"
-                rows={3}
-                maxLength={200}
-                className="w-full px-4 py-2.5 bg-secondary text-foreground placeholder-foreground/50 rounded-lg border border-border focus:border-primary focus:outline-none transition resize-none"
-              />
-              <p className="mt-1 text-xs text-foreground/50">
-                {formData.excerpt.length}/200 characters
-              </p>
-            </div>
             {/* Content */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">

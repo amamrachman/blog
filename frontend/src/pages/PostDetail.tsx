@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import TextAlign from "@tiptap/extension-text-align";
+import type { JSONContent } from "@tiptap/react";
 import { fetchPostBySlug, deletePost } from "@/api/client";
 import type { Post } from "@/types";
 import { useAuth } from "@/context/useAuth";
+import { toast } from "sonner";
 
 export default function PostDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -11,7 +16,18 @@ export default function PostDetail() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+  // isDeleting removed - using toast instead
+
+  const [parsedContent, setParsedContent] = useState<JSONContent | null>(null);
+
+  const contentEditor = useEditor({
+    extensions: [
+      StarterKit,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+    ],
+    content: parsedContent || { type: "doc", content: [{ type: "paragraph" }] },
+    editable: false,
+  });
 
   useEffect(() => {
     if (slug) {
@@ -19,11 +35,37 @@ export default function PostDetail() {
     }
   }, [slug]);
 
+  useEffect(() => {
+    return () => {
+      contentEditor?.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (parsedContent && contentEditor) {
+      contentEditor.commands.setContent(parsedContent);
+    }
+  }, [parsedContent, contentEditor]);
+
   async function loadPost() {
     try {
       setLoading(true);
       const data = await fetchPostBySlug(slug!);
       setPost(data);
+
+      // Parse TipTap content safely
+      if (data.content) {
+        try {
+          const jsonContent: JSONContent =
+            typeof data.content === "string"
+              ? JSON.parse(data.content)
+              : data.content;
+          setParsedContent(jsonContent);
+        } catch (parseErr) {
+          console.warn("Failed to parse TipTap content:", parseErr);
+          setParsedContent(null);
+        }
+      }
     } catch (err) {
       setError("Failed to load post");
       console.error(err);
@@ -33,18 +75,23 @@ export default function PostDetail() {
   }
 
   async function handleDelete() {
-    if (!post || !confirm("Are you sure you want to delete this post?")) return;
+    if (!post) return;
 
-    try {
-      setIsDeleting(true);
-      await deletePost(post.id);
-      navigate("/admin");
-    } catch (err) {
-      alert("Failed to delete post");
-      console.error(err);
-    } finally {
-      setIsDeleting(false);
-    }
+    toast("Apakah yakin ingin menghapus post ini?", {
+      duration: 0,
+      closeButton: true,
+      action: {
+        label: "Ya, Hapus",
+        onClick: async () => {
+          await toast.promise(deletePost(post.id), {
+            loading: "Menghapus post...",
+            success: "Post berhasil dihapus!",
+            error: "Gagal menghapus post",
+          });
+          navigate("/admin");
+        },
+      },
+    });
   }
 
   if (loading) {
@@ -133,10 +180,9 @@ export default function PostDetail() {
                   </Link>
                   <button
                     onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="text-destructive hover:underline disabled:opacity-50"
+                    className="text-destructive hover:underline"
                   >
-                    {isDeleting ? "Deleting..." : "Delete"}
+                    Delete
                   </button>
                 </div>
               </>
@@ -146,17 +192,11 @@ export default function PostDetail() {
       </section>
 
       <article className="mx-auto max-w-3xl px-4 py-12">
-        <div className="prose prose-slate dark:prose-invert max-w-none">
-          {post.content.split("\n").map(
-            (paragraph, index) =>
-              paragraph.trim() && (
-                <p
-                  key={index}
-                  className="mb-4 text-foreground/80 leading-relaxed"
-                >
-                  {paragraph}
-                </p>
-              ),
+        <div className="prose prose-slate dark:prose-invert max-w-none tiptap-content">
+          {contentEditor ? (
+            <EditorContent editor={contentEditor} />
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: post.content }} />
           )}
         </div>
       </article>

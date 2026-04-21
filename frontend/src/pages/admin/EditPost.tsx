@@ -1,21 +1,28 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { AdminSidebar } from '@/components/AdminSidebar';
-import { fetchPostById, updatePost, deletePost } from '@/api/client';
-import type { Post } from '@/types';
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { Editor } from "@/components/Editor";
+import { fetchPostById, updatePost, deletePost } from "@/api/client";
+import type { Post } from "@/types";
+import type { JSONContent } from "@tiptap/react";
+import { countWordsFromTiptap } from "@/utils/tiptap";
+import { toast } from "sonner";
 
 export default function EditPost() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
+  const [formData, setFormData] = useState<{
+    title: string;
+    content: JSONContent | undefined;
+  }>({
+    title: "",
+    content: undefined,
   });
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -30,91 +37,105 @@ export default function EditPost() {
       setPost(data);
       setFormData({
         title: data.title,
-        content: data.content,
+        content:
+          typeof data.content === "string"
+            ? JSON.parse(data.content)
+            : data.content,
       });
     } catch (err) {
-      setError('Failed to load post');
+      setError("Failed to load post");
       console.error(err);
     } finally {
       setLoading(false);
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    if (name === "content") return; // content handled by Editor
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  const handleEditorChange = useCallback((content: JSONContent) => {
+    setFormData((prev) => ({ ...prev, content }));
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    if (!formData.title.trim() && !formData.content.trim()) {
-      setError('Please fill in at least one field');
+    if (!formData.title || !formData.content) {
+      setError("Title and content are required");
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const updates: { title?: string; content?: string } = {};
-      if (formData.title !== post?.title) updates.title = formData.title;
-      if (formData.content !== post?.content) updates.content = formData.content;
-
-      await updatePost(parseInt(id!), updates);
-      navigate('/admin');
+      await updatePost(parseInt(id!), {
+        title: formData.title,
+        content: JSON.stringify(formData.content),
+      });
+      navigate("/admin");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update post');
+      setError(err instanceof Error ? err.message : "Failed to update post");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    setIsSubmitting(true);
-    try {
-      await deletePost(parseInt(id!));
-      navigate('/admin');
-    } catch (err) {
-      alert('Failed to delete post');
-      console.error(err);
-      setIsSubmitting(false);
-    }
+    await toast.promise(deletePost(parseInt(id!)), {
+      loading: "Menghapus post...",
+      success: "Post berhasil dihapus!",
+      error: "Gagal menghapus post",
+    });
+    navigate("/admin");
   };
 
-  const wordCount = formData.content.trim().split(/\s+/).filter(w => w).length;
+  const wordCount = countWordsFromTiptap(formData.content);
 
-  if (loading) {
+  if (loading || !post) {
     return (
-      <div className="flex min-h-screen bg-background">
-        <AdminSidebar />
-        <main className="flex-1 lg:ml-64 flex items-center justify-center">
-          <div className="text-foreground/70">Loading...</div>
-        </main>
-      </div>
-    );
-  }
-
-  if (error || !post) {
-    return (
-      <div className="flex min-h-screen bg-background">
-        <AdminSidebar />
-        <main className="flex-1 lg:ml-64 flex items-center justify-center py-12 px-4">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🔍</div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Post Not Found</h1>
-            <p className="text-foreground/60 mb-6">The post you're looking for doesn't exist or has been removed.</p>
-            <Link to="/admin" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Dashboard
-            </Link>
-          </div>
-        </main>
+      <div className="flex min-h-screen bg-background items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          {loading ? (
+            <div className="text-foreground/70">Loading...</div>
+          ) : (
+            <>
+              <div className="text-6xl mb-4">🔍</div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                Post Not Found
+              </h1>
+              <p className="text-foreground/60 mb-6">
+                The post you're looking for doesn't exist or has been removed.
+              </p>
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+                Back to Dashboard
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -123,25 +144,42 @@ export default function EditPost() {
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
 
-      <main className="flex-1 lg:ml-64 py-8 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <Link 
-              to="/admin" 
+            <Link
+              to="/admin"
               className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition mb-4 group"
             >
-              <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="w-4 h-4 group-hover:-translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               Back to Dashboard
             </Link>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Edit Post</h1>
-            <p className="text-foreground/60">Update your article content and settings</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+              Edit Post
+            </h1>
+            <p className="text-foreground/60">
+              Update your article content and settings
+            </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 sm:p-8 space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-xl border border-border bg-card p-6 sm:p-8 space-y-6"
+          >
             {error && (
               <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg">
                 {error}
@@ -150,7 +188,10 @@ export default function EditPost() {
 
             {/* Title */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-foreground mb-2"
+              >
                 Post Title <span className="text-destructive">*</span>
               </label>
               <input
@@ -167,22 +208,15 @@ export default function EditPost() {
 
             {/* Content */}
             <div>
-              <label htmlFor="content" className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Post Content <span className="text-destructive">*</span>
               </label>
-              <textarea
-                id="content"
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                placeholder="Write your full post content here..."
-                rows={12}
-                className="w-full px-4 py-2.5 bg-secondary text-foreground placeholder-foreground/50 rounded-lg border border-border focus:border-primary focus:outline-none transition resize-y font-mono text-sm"
-                required
-              />
-              <p className="mt-1 text-xs text-foreground/50">
-                Tip: Use <code className="px-1 py-0.5 bg-secondary/50 rounded"># Heading</code> for titles, <code className="px-1 py-0.5 bg-secondary/50 rounded">**bold**</code> for emphasis
-              </p>
+              <div className="h-125 mb-2">
+                <Editor
+                  initialContent={formData.content}
+                  onChange={handleEditorChange}
+                />
+              </div>
             </div>
 
             {/* Word Count */}
@@ -192,9 +226,20 @@ export default function EditPost() {
               </label>
               <div className="px-4 py-2.5 bg-secondary rounded-lg border border-border">
                 <p className="text-sm text-foreground/70">
-                  📊 Word count: <span className="font-semibold text-foreground">{wordCount}</span>
-                  {wordCount > 500 && <span className="ml-2 text-xs text-green-500">✓ Good length</span>}
-                  {wordCount < 300 && <span className="ml-2 text-xs text-amber-500">⚠️ Consider adding more content</span>}
+                  📊 Word count:{" "}
+                  <span className="font-semibold text-foreground">
+                    {wordCount}
+                  </span>
+                  {wordCount > 500 && (
+                    <span className="ml-2 text-xs text-green-500">
+                      ✓ Good length
+                    </span>
+                  )}
+                  {wordCount < 300 && (
+                    <span className="ml-2 text-xs text-amber-500">
+                      ⚠️ Consider adding more content
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -202,7 +247,7 @@ export default function EditPost() {
             {/* Last edited info */}
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
               <p className="text-xs text-foreground/70 text-center">
-                Last edited: {new Date(post.updated_at).toLocaleString()}
+                Last edited: {new Date(post!.updated_at).toLocaleString()}
               </p>
             </div>
 
@@ -210,19 +255,38 @@ export default function EditPost() {
             <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-border">
               <button
                 type="submit"
-                disabled={isSubmitting || (formData.title === post.title && formData.content === post.content)}
+                disabled={
+                  isSubmitting ||
+                  (formData.title === post.title &&
+                    JSON.stringify(formData.content) === post.content)
+                }
                 className="flex-1 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Saving Changes...
                   </span>
                 ) : (
-                  '💾 Save Changes'
+                  "💾 Save Changes"
                 )}
               </button>
               <button
@@ -245,10 +309,15 @@ export default function EditPost() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-destructive/10 flex items-center justify-center">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <h2 className="text-xl font-bold text-foreground mb-2">Delete Post?</h2>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Delete Post?
+              </h2>
               <p className="text-foreground/60">
-                Are you sure you want to delete "<span className="font-semibold text-foreground">{formData.title}</span>"? 
-                This action cannot be undone.
+                Are you sure you want to delete "
+                <span className="font-semibold text-foreground">
+                  {formData.title}
+                </span>
+                "? This action cannot be undone.
               </p>
             </div>
             <div className="flex gap-3">
@@ -263,7 +332,7 @@ export default function EditPost() {
                 disabled={isSubmitting}
                 className="flex-1 py-2.5 bg-destructive text-white rounded-lg hover:bg-destructive/90 transition disabled:opacity-50"
               >
-                {isSubmitting ? 'Deleting...' : 'Yes, Delete'}
+                {isSubmitting ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
           </div>

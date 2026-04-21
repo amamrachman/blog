@@ -5,6 +5,7 @@ import { fetchPosts, deletePost } from "@/api/client";
 import type { Post } from "@/types";
 import { useAuth } from "@/context/useAuth";
 import { countWordsFromTiptap } from "@/utils/tiptap";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -34,15 +35,21 @@ export default function Dashboard() {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Are you sure you want to delete this post?")) return;
-
-    try {
-      await deletePost(id);
-      setPosts(posts.filter((p) => p.id !== id));
-    } catch (err) {
-      alert("Failed to delete post");
-      console.error(err);
-    }
+    toast("Apakah yakin ingin menghapus post ini?", {
+      duration: 0,
+      closeButton: true,
+      action: {
+        label: "Ya, Hapus",
+        onClick: async () => {
+          await toast.promise(deletePost(id), {
+            loading: "Menghapus post...",
+            success: "Post berhasil dihapus! ✅",
+            error: "Gagal menghapus post 😞",
+          });
+          setPosts(posts.filter((p) => p.id !== id));
+        },
+      },
+    });
   }
 
   const thisMonthPosts = posts.filter((p) => {
@@ -53,6 +60,8 @@ export default function Dashboard() {
       date.getFullYear() === now.getFullYear()
     );
   }).length;
+
+  // Removed parseContent - countWordsFromTiptap now handles string directly
 
   const avgWords =
     posts.length > 0
@@ -104,7 +113,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
 
-      <main className="flex-1 lg:ml-64 py-8 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">

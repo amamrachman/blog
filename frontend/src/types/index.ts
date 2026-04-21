@@ -1,5 +1,3 @@
-import type { JSONContent } from "@tiptap/react";
-
 export interface User {
   id: number;
   email: string;
@@ -10,7 +8,7 @@ export interface User {
 export interface Post {
   id: number;
   title: string;
-  content: JSONContent;
+  content: string;
   slug: string;
   author_id: number;
   author?: User;
@@ -36,5 +34,5 @@ export interface CreatePostInput {
 
 export interface UpdatePostInput {
   title?: string;
-  content?: JSONContent;
+  content?: string;
 }
