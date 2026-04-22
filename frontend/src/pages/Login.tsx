@@ -31,7 +31,6 @@ export default function Login() {
   };
 
   return (
-    /* fixed inset-0: Mengunci seluruh tampilan agar tidak ada scrollbar browser. */
     <div className="fixed inset-0 h-screen w-screen flex overflow-hidden bg-background">
       <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-primary/90 to-primary/60 flex-col items-center justify-center relative h-full flex-none">
         <div className="absolute inset-0 bg-grid-white/10" />

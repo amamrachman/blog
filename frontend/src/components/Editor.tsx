@@ -22,7 +22,51 @@ import {
   Unlink,
   X,
   ImagePlus,
+  List,
+  ListOrdered,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
 } from "lucide-react";
+import { type ReactNode } from "react";
+
+interface ToolbarButtonProps {
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  icon: ReactNode;
+  title: string;
+  className?: string;
+}
+
+const ToolbarButton = ({
+  onClick,
+  active = false,
+  disabled = false,
+  icon,
+  title,
+  className = "",
+}: ToolbarButtonProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={`
+      p-2 rounded-md transition-all duration-200 flex items-center justify-center
+      ${
+        active
+          ? "bg-primary text-primary-foreground shadow-sm scale-95"
+          : "text-foreground/70 hover:bg-gray-200 hover:text-foreground active:bg-gray-300"
+      }
+      ${disabled ? "opacity-20 cursor-not-allowed" : "cursor-pointer"}
+      ${className}
+    `}
+  >
+    {icon}
+  </button>
+);
 import { toast } from "sonner";
 import { uploadImage } from "@/api/client";
 
@@ -54,7 +98,9 @@ const handleImageFiles = async (files: File[], editor: TiptapEditor) => {
     try {
       const url = await uploadImageToServer(file);
       editor.chain().focus().setImage({ src: url }).run();
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }
 };
 
@@ -62,6 +108,16 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        bulletList: {
+          HTMLAttributes: {
+            class: "list-disc ml-4",
+          },
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: "list-decimal ml-4",
+          },
+        },
         link: {
           openOnClick: false,
           autolink: true,
@@ -71,7 +127,11 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
           },
         },
       }),
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+        alignments: ["left", "center", "right", "justify"],
+        defaultAlignment: "left",
+      }),
       Image.configure({
         allowBase64: true,
         HTMLAttributes: {
@@ -122,6 +182,12 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
   const editorState = useEditorState({
     editor,
     selector: (ctx) => ({
+      isAlignLeft: ctx.editor?.isActive({ textAlign: "left" }) ?? false,
+      isAlignCenter: ctx.editor?.isActive({ textAlign: "center" }) ?? false,
+      isAlignRight: ctx.editor?.isActive({ textAlign: "right" }) ?? false,
+      isAlignJustify: ctx.editor?.isActive({ textAlign: "justify" }) ?? false,
+      isBulletList: ctx.editor?.isActive("bulletList") ?? false,
+      isOrderedList: ctx.editor?.isActive("orderedList") ?? false,
       canUndo: ctx.editor?.can().undo() ?? false,
       canRedo: ctx.editor?.can().redo() ?? false,
       isBold: ctx.editor?.isActive("bold") ?? false,
@@ -213,118 +279,147 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
   if (!editor) return null;
 
   return (
-    <div className="flex flex-col border rounded-lg overflow-hidden bg-white h-full min-h-125">
-      <div className="flex-none flex flex-wrap gap-2 p-2 border-b bg-gray-50">
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editorState?.canUndo}
-          className="p-2 border rounded disabled:opacity-30 hover:bg-gray-100"
-        >
-          <Undo size={18} />
-        </button>
+    <div className="flex flex-col border rounded-xl overflow-hidden bg-white h-full min-h-125 shadow-sm border-border">
+      {/* TOOLBAR START */}
+      <div className="flex-none flex flex-wrap items-center gap-1 p-2 border-b bg-gray-50/50 backdrop-blur-md">
+        {/* Group: History */}
+        <div className="flex items-center gap-1 pr-2 border-r border-gray-300">
+          <ToolbarButton
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editorState?.canUndo}
+            icon={<Undo size={16} />}
+            title="Undo"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editorState?.canRedo}
+            icon={<Redo size={16} />}
+            title="Redo"
+          />
+        </div>
 
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editorState?.canRedo}
-          className="p-2 border rounded disabled:opacity-30 hover:bg-gray-100"
-        >
-          <Redo size={18} />
-        </button>
+        {/* Group: Lists */}
+        <div className="flex items-center gap-1 px-2 border-r border-gray-300">
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            active={editorState?.isBulletList}
+            icon={<List size={16} />}
+            title="Bullet List"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            active={editorState?.isOrderedList}
+            icon={<ListOrdered size={16} />}
+            title="Ordered List"
+          />
+        </div>
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        {/* Group: Alignment */}
+        <div className="flex items-center gap-1 px-2 border-r border-gray-300">
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            active={editorState?.isAlignLeft}
+            icon={<AlignLeft size={16} />}
+            title="Align Left"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setTextAlign("center").run()}
+            active={editorState?.isAlignCenter}
+            icon={<AlignCenter size={16} />}
+            title="Align Center"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            active={editorState?.isAlignRight}
+            icon={<AlignRight size={16} />}
+            title="Align Right"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+            active={editorState?.isAlignJustify}
+            icon={<AlignJustify size={16} />}
+            title="Justify"
+          />
+        </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 1 }).run()
-          }
-          className={`p-2 rounded border ${editorState?.isH1 ? "bg-black text-white" : "bg-white"}`}
-        >
-          <Heading1 size={18} />
-        </button>
+        {/* Group: Typography */}
+        <div className="flex items-center gap-1 px-2 border-r border-gray-300">
+          <ToolbarButton
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 1 }).run()
+            }
+            active={editorState?.isH1}
+            icon={<Heading1 size={16} />}
+            title="Heading 1"
+          />
+          <ToolbarButton
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 2 }).run()
+            }
+            active={editorState?.isH2}
+            icon={<Heading2 size={16} />}
+            title="Heading 2"
+          />
+          <ToolbarButton
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 3 }).run()
+            }
+            active={editorState?.isH3}
+            icon={<Heading3 size={16} />}
+            title="Heading 3"
+          />
+        </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          className={`p-2 rounded border ${editorState?.isH2 ? "bg-black text-white" : "bg-white"}`}
-        >
-          <Heading2 size={18} />
-        </button>
+        {/* Group: Text Formatting */}
+        <div className="flex items-center gap-1 px-2 border-r border-gray-300">
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            active={editorState?.isBold}
+            icon={<Bold size={16} />}
+            title="Bold"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            active={editorState?.isItalic}
+            icon={<Italic size={16} />}
+            title="Italic"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            active={editorState?.isUnderline}
+            icon={<UnderIcon size={16} />}
+            title="Underline"
+          />
+        </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 3 }).run()
-          }
-          className={`p-2 rounded border ${editorState?.isH3 ? "bg-black text-white" : "bg-white"}`}
-        >
-          <Heading3 size={18} />
-        </button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`p-2 rounded border ${editorState?.isBold ? "bg-black text-white" : "bg-white"}`}
-        >
-          <Bold size={18} />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`p-2 rounded border ${editorState?.isItalic ? "bg-black text-white" : "bg-white"}`}
-        >
-          <Italic size={18} />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={`p-2 rounded border ${editorState?.isUnderline ? "bg-black text-white" : "bg-white"}`}
-        >
-          <UnderIcon size={18} />
-        </button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        <button
-          type="button"
-          onClick={addImage}
-          className="p-2 rounded border bg-white hover:bg-gray-100 transition-colors"
-          title="Add Image"
-        >
-          <ImagePlus size={18} />
-        </button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        <button
-          type="button"
-          onClick={openLinkModal}
-          className={`p-2 rounded border ${editorState?.isLink ? "bg-black text-white" : "bg-white"}`}
-        >
-          <LinkIcon size={18} />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().unsetLink().run()}
-          disabled={!editorState?.isLink}
-          className="p-2 border rounded disabled:opacity-30 hover:bg-gray-100 bg-white"
-        >
-          <Unlink size={18} />
-        </button>
+        {/* Group: Media & Links */}
+        <div className="flex items-center gap-1 pl-2">
+          <ToolbarButton
+            onClick={addImage}
+            icon={<ImagePlus size={16} />}
+            title="Add Image"
+            className="hover:bg-blue-50 hover:text-blue-600"
+          />
+          <ToolbarButton
+            onClick={openLinkModal}
+            active={editorState?.isLink}
+            icon={<LinkIcon size={16} />}
+            title="Insert Link"
+            className="active:bg-blue-600 active:text-white"
+          />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().unsetLink().run()}
+            disabled={!editorState?.isLink}
+            icon={<Unlink size={16} />}
+            title="Remove Link"
+          />
+        </div>
       </div>
+      {/* TOOLBAR END */}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-white">
         <EditorContent
-          className="tiptap-content flex-1 overflow-y-auto p-4 prose max-w-none focus:outline-none"
+          className="tiptap-content flex-1 overflow-y-auto p-6 prose max-w-none focus:outline-none"
           editor={editor}
         />
       </div>
