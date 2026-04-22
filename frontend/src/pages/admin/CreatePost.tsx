@@ -22,7 +22,7 @@ export default function CreatePost() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    if (name === "content") return; // content handled by Editor
+    if (name === "content") return;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -40,7 +40,7 @@ export default function CreatePost() {
     e.preventDefault();
     setError("");
 
-    if (!formData.title || !formData.content) {
+    if (!formData.title.trim() || !formData.content) {
       setError("Title and content are required");
       return;
     }
@@ -50,7 +50,7 @@ export default function CreatePost() {
     try {
       await createPost({
         title: formData.title,
-        content: JSON.stringify(formData.content),
+        content: formData.content,
       });
       navigate("/admin");
     } catch (err) {
@@ -61,19 +61,18 @@ export default function CreatePost() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       <AdminSidebar />
 
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <Link
               to="/admin"
-              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition mb-4"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition mb-4 group"
             >
               <svg
-                className="w-4 h-4"
+                className="w-4 h-4 transition-transform group-hover:-translate-x-1"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -97,19 +96,18 @@ export default function CreatePost() {
 
           <form
             onSubmit={handleSubmit}
-            className="bg-card rounded-xl border border-border p-6 sm:p-8 space-y-6"
+            className="bg-card rounded-xl border border-border p-6 sm:p-8 space-y-6 shadow-sm"
           >
             {error && (
-              <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg">
+              <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg animate-in fade-in slide-in-from-top-1">
                 {error}
               </div>
             )}
 
-            {/* Title */}
-            <div>
+            <div className="space-y-2">
               <label
                 htmlFor="title"
-                className="block text-sm font-medium text-foreground mb-2"
+                className="block text-sm font-medium text-foreground"
               >
                 Post Title <span className="text-destructive">*</span>
               </label>
@@ -121,68 +119,35 @@ export default function CreatePost() {
                 onChange={handleChange}
                 placeholder="Enter your post title"
                 required
-                className="w-full px-4 py-2.5 bg-secondary text-foreground placeholder-foreground/50 rounded-lg border border-border focus:border-primary focus:outline-none transition"
+                className="w-full px-4 py-2.5 bg-secondary text-foreground placeholder-foreground/40 rounded-lg border border-border focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
               />
-              <p className="mt-1 text-xs text-foreground/50">
-                A catchy title helps your post get noticed
-              </p>
             </div>
 
-            {/* Content */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">
                 Content <span className="text-destructive">*</span>
               </label>
-              {/* Tambahkan tinggi tetap di sini jika ingin area ketik punya scroll sendiri */}
-              <div className="h-125">
+
+              <div className="h-125 rounded-lg overflow-hidden border border-border shadow-inner">
                 <Editor
                   initialContent={formData.content}
                   onChange={handleEditorChange}
                 />
               </div>
-              <p className="mt-2 text-xs text-foreground/50">
-                Rich text editor with formatting options
-              </p>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-border">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Publishing...
-                  </span>
-                ) : (
-                  "Publish Post"
-                )}
+                {isSubmitting ? "Publishing..." : "Publish Post"}
               </button>
               <button
                 type="button"
                 onClick={() => navigate("/admin")}
-                className="px-6 py-3 border border-border text-foreground font-semibold rounded-lg hover:bg-secondary transition"
+                className="px-6 py-3 border border-border text-foreground font-semibold rounded-lg hover:bg-secondary transition-colors"
               >
                 Cancel
               </button>

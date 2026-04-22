@@ -58,10 +58,7 @@ export const createPost = (data: CreatePostInput) =>
     body: JSON.stringify(data),
   });
 
-export const updatePost = (
-  id: number,
-  data: UpdatePostInput,
-) =>
+export const updatePost = (id: number, data: UpdatePostInput) =>
   fetchWithAuth(`/posts/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),

@@ -31,16 +31,8 @@ export default function Home() {
   }
 
   const filteredPosts = posts.filter((post) => {
-    let contentText = "";
-    if (typeof post.content === "string") {
-      contentText = post.content;
-    } else {
-      try {
-        contentText = getTextFromJSON(JSON.parse(post.content));
-      } catch {
-        contentText = "";
-      }
-    }
+    const contentText = getTextFromJSON(post.content);
+
     return (
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contentText.toLowerCase().includes(searchTerm.toLowerCase())
