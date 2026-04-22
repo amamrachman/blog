@@ -6,6 +6,8 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
+import Image from "@tiptap/extension-image";
+
 import { useState, useCallback } from "react";
 import {
   Bold,
@@ -19,12 +21,42 @@ import {
   Link as LinkIcon,
   Unlink,
   X,
+  ImagePlus,
 } from "lucide-react";
+import { toast } from "sonner";
+import { uploadImage } from "@/api/client";
 
 interface EditorProps {
   initialContent?: JSONContent;
   onChange: (json: JSONContent) => void;
 }
+
+type TiptapEditor = Awaited<ReturnType<typeof useEditor>>;
+
+const isImageFile = (file: File): boolean => {
+  return file.type.startsWith("image/");
+};
+
+const uploadImageToServer = async (file: File): Promise<string> => {
+  const uploadToastId = toast.loading("Uploading image...");
+  try {
+    const url = await uploadImage(file);
+    toast.success("Image uploaded successfully!", { id: uploadToastId });
+    return url;
+  } catch (error) {
+    toast.error("Failed to upload image", { id: uploadToastId });
+    throw error;
+  }
+};
+
+const handleImageFiles = async (files: File[], editor: TiptapEditor) => {
+  for (const file of files.filter(isImageFile)) {
+    try {
+      const url = await uploadImageToServer(file);
+      editor.chain().focus().setImage({ src: url }).run();
+    } catch { /* empty */ }
+  }
+};
 
 export const Editor = ({ initialContent, onChange }: EditorProps) => {
   const editor = useEditor({
@@ -40,7 +72,46 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
         },
       }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Image.configure({
+        allowBase64: true,
+        HTMLAttributes: {
+          class:
+            "rounded-lg border border-border shadow-sm max-w-full h-auto my-4",
+        },
+      }),
     ],
+    editorProps: {
+      handleDrop: (__view, event) => {
+        event.preventDefault();
+        const files = Array.from(event.dataTransfer?.files || []);
+        if (editor) {
+          handleImageFiles(files, editor);
+        }
+        return true;
+      },
+      handlePaste: (__view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items || !editor) return false;
+
+        const files: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].kind === "file") {
+            const file = items[i].getAsFile();
+            if (file && isImageFile(file)) {
+              files.push(file);
+            }
+          }
+        }
+
+        if (files.length > 0) {
+          event.preventDefault();
+          handleImageFiles(files, editor);
+          return true;
+        }
+
+        return false;
+      },
+    },
     content: initialContent,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
@@ -66,6 +137,20 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("https://");
   const [linkText, setLinkText] = useState("Link");
+
+  const addImage = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = async (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      if (files.length > 0 && editor) {
+        handleImageFiles(files, editor);
+      }
+    };
+    input.click();
+  }, [editor]);
 
   const openLinkModal = useCallback(() => {
     editor?.chain().focus().extendMarkRange("link").run();
@@ -210,6 +295,17 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
 
         <button
           type="button"
+          onClick={addImage}
+          className="p-2 rounded border bg-white hover:bg-gray-100 transition-colors"
+          title="Add Image"
+        >
+          <ImagePlus size={18} />
+        </button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <button
+          type="button"
           onClick={openLinkModal}
           className={`p-2 rounded border ${editorState?.isLink ? "bg-black text-white" : "bg-white"}`}
         >
@@ -239,7 +335,6 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-60 flex items-center justify-center p-4 animate-in fade-in duration-300"
             onClick={closeLinkModal}
           />
-
           <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border max-w-sm w-full z-70 overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
