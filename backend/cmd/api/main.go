@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/logger"
+	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
 	app := fiber.New()
 
 	app.Use(logger.New())
+	app.Get("/uploads/*", static.New("./public/uploads"))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://localhost:5173",
@@ -55,6 +57,7 @@ func main() {
 
 	auth := api.Group("", middleware.AuthRequired())
 	auth.Get("/me", handlers.Me)
+	auth.Post("/uploads", handlers.UploadImage)
 	auth.Post("/posts", handlers.CreatePost)
 	auth.Patch("/posts/:id", handlers.UpdatePost)
 	auth.Delete("/posts/:id", handlers.DeletePost)
