@@ -14,8 +14,8 @@ import (
 )
 
 type CreatePostInput struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	Title   string          `json:"title"`
+	Content json.RawMessage `json:"content"`
 }
 
 func CreatePost(c fiber.Ctx) error {
