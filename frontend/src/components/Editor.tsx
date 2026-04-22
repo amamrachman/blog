@@ -6,6 +6,7 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
+import { useState, useCallback } from "react";
 import {
   Bold,
   Italic,
@@ -15,6 +16,9 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Link as LinkIcon,
+  Unlink,
+  X,
 } from "lucide-react";
 
 interface EditorProps {
@@ -25,7 +29,16 @@ interface EditorProps {
 export const Editor = ({ initialContent, onChange }: EditorProps) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          autolink: true,
+          defaultProtocol: "https",
+          HTMLAttributes: {
+            class: "text-primary underline cursor-pointer",
+          },
+        },
+      }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: initialContent,
@@ -46,8 +59,71 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
       isH1: ctx.editor?.isActive("heading", { level: 1 }) ?? false,
       isH2: ctx.editor?.isActive("heading", { level: 2 }) ?? false,
       isH3: ctx.editor?.isActive("heading", { level: 3 }) ?? false,
+      isLink: ctx.editor?.isActive("link") ?? false,
     }),
   });
+
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("https://");
+  const [linkText, setLinkText] = useState("Link");
+
+  const openLinkModal = useCallback(() => {
+    editor?.chain().focus().extendMarkRange("link").run();
+    if (editorState?.isLink) {
+      const href = editor?.getAttributes("link").href as string;
+      if (href) setLinkUrl(href);
+    }
+    setIsLinkModalOpen(true);
+  }, [editor, editorState?.isLink]);
+
+  const closeLinkModal = () => {
+    setIsLinkModalOpen(false);
+    setLinkUrl("https://");
+  };
+
+  const applyLink = () => {
+    if (!linkUrl.trim() || !linkText.trim()) {
+      return;
+    }
+
+    if (!editor) return;
+
+    editor.chain().focus().run();
+
+    const selection = editor.state.selection;
+    const isEmptySelection = selection.empty;
+
+    if (isEmptySelection) {
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "text",
+          text: linkText,
+          marks: [{ type: "link", attrs: { href: linkUrl } }],
+        })
+        .run();
+    } else {
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange("link")
+        .setLink({ href: linkUrl })
+        .run();
+    }
+
+    closeLinkModal();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      applyLink();
+    }
+    if (e.key === "Escape") {
+      closeLinkModal();
+    }
+  };
 
   if (!editor) return null;
 
@@ -129,6 +205,25 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
         >
           <UnderIcon size={18} />
         </button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <button
+          type="button"
+          onClick={openLinkModal}
+          className={`p-2 rounded border ${editorState?.isLink ? "bg-black text-white" : "bg-white"}`}
+        >
+          <LinkIcon size={18} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().unsetLink().run()}
+          disabled={!editorState?.isLink}
+          className="p-2 border rounded disabled:opacity-30 hover:bg-gray-100 bg-white"
+        >
+          <Unlink size={18} />
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -137,6 +232,92 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
           editor={editor}
         />
       </div>
+
+      {isLinkModalOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-60 flex items-center justify-center p-4 animate-in fade-in duration-300"
+            onClick={closeLinkModal}
+          />
+
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-2xl border border-border max-w-sm w-full z-70 overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <LinkIcon size={16} className="text-primary" />
+                {editorState?.isLink ? "Edit Link" : "Insert Link"}
+              </h3>
+              <button
+                onClick={closeLinkModal}
+                className="p-1.5 hover:bg-secondary rounded-full transition-colors text-foreground/50 hover:text-foreground"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/60">
+                  Display Text
+                </label>
+                <input
+                  type="text"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  placeholder="e.g. My Website"
+                  className="w-full px-4 py-2.5 bg-secondary/50 text-foreground placeholder-foreground/30 rounded-xl border border-border focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/60">
+                  Destination URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="https://example.com"
+                    className="w-full px-4 py-2.5 bg-secondary/50 text-foreground placeholder-foreground/30 rounded-xl border border-border focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all text-sm"
+                  />
+                </div>
+              </div>
+
+              {(linkText || linkUrl) && (
+                <div className="p-3 bg-primary/5 rounded-xl border border-primary/10">
+                  <p className="text-[10px] font-bold text-primary/60 uppercase mb-1 px-1">
+                    Preview
+                  </p>
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-sm text-primary underline font-medium truncate">
+                      {linkText || linkUrl}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-muted/20 border-t border-border flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeLinkModal}
+                className="px-4 py-2 text-sm text-foreground/70 hover:text-foreground font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyLink}
+                disabled={!linkUrl.trim() || linkUrl === "https://"}
+                className="px-6 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-xl hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 transition-all shadow-md shadow-primary/20"
+              >
+                {editorState?.isLink ? "Update" : "Insert Link"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

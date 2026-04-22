@@ -16,7 +16,6 @@ export default function PostDetail() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // isDeleting removed - using toast instead
 
   const [parsedContent, setParsedContent] = useState<JSONContent | null>(null);
 
@@ -53,7 +52,6 @@ export default function PostDetail() {
       const data = await fetchPostBySlug(slug!);
       setPost(data);
 
-      // Parse TipTap content safely
       if (data.content) {
         try {
           const jsonContent: JSONContent =
