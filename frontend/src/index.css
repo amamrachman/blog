@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -172,4 +174,14 @@
 
 .tiptap-content .ProseMirror p {
   margin-bottom: 0.75rem;
+}
+
+.tiptap-content .ProseMirror a {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tiptap-content .ProseMirror a:hover {
+  opacity: 0.8;
 }
