@@ -6,7 +6,16 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
-import { Bold, Italic, Underline as UnderIcon, Undo, Redo } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  Underline as UnderIcon,
+  Undo,
+  Redo,
+  Heading1,
+  Heading2,
+  Heading3,
+} from "lucide-react";
 
 interface EditorProps {
   initialContent?: JSONContent;
@@ -34,6 +43,9 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
       isBold: ctx.editor?.isActive("bold") ?? false,
       isItalic: ctx.editor?.isActive("italic") ?? false,
       isUnderline: ctx.editor?.isActive("underline") ?? false,
+      isH1: ctx.editor?.isActive("heading", { level: 1 }) ?? false,
+      isH2: ctx.editor?.isActive("heading", { level: 2 }) ?? false,
+      isH3: ctx.editor?.isActive("heading", { level: 3 }) ?? false,
     }),
   });
 
@@ -64,6 +76,38 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
 
         <button
           type="button"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run()
+          }
+          className={`p-2 rounded border ${editorState?.isH1 ? "bg-black text-white" : "bg-white"}`}
+        >
+          <Heading1 size={18} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+          className={`p-2 rounded border ${editorState?.isH2 ? "bg-black text-white" : "bg-white"}`}
+        >
+          <Heading2 size={18} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+          className={`p-2 rounded border ${editorState?.isH3 ? "bg-black text-white" : "bg-white"}`}
+        >
+          <Heading3 size={18} />
+        </button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <button
+          type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={`p-2 rounded border ${editorState?.isBold ? "bg-black text-white" : "bg-white"}`}
         >
@@ -87,9 +131,9 @@ export const Editor = ({ initialContent, onChange }: EditorProps) => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 focus:outline-none">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <EditorContent
-          className="tiptap-content h-full prose max-w-none prose-headings:scroll-m-20 prose-p:scroll-m-6"
+          className="tiptap-content flex-1 overflow-y-auto p-4 prose max-w-none focus:outline-none"
           editor={editor}
         />
       </div>
