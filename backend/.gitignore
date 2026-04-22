@@ -47,5 +47,9 @@ coverage.html
 *.cover
 
 
+
 go.work
 go.work.sum
+
+public/uploads/
+
