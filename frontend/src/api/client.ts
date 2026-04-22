@@ -68,3 +68,29 @@ export const deletePost = (id: number) =>
   fetchWithAuth(`/posts/${id}`, {
     method: "DELETE",
   });
+
+export const uploadImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const token = getToken();
+  const response = await fetch(`${API_URL}/uploads`, {
+    method: "POST",
+    body: formData,
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {},
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.url;
+};
