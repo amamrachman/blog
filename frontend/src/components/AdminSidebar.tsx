@@ -28,7 +28,7 @@ export function AdminSidebar() {
     {
       icon: "📝",
       label: "All Posts",
-      href: "/admin/posts",
+      href: "/admin",
     },
   ];
 
@@ -100,9 +100,9 @@ export function AdminSidebar() {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => (
               <Link
-                key={item.href}
+                key={index}
                 to={item.href}
                 onClick={handleLinkClick}
                 className={`
