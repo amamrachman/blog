@@ -185,3 +185,16 @@
 .tiptap-content .ProseMirror a:hover {
   opacity: 0.8;
 }
+
+.tiptap-content .ProseMirror img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem auto;
+  border-radius: var(--radius-lg);
+}
+
+.tiptap-content .ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid var(--primary);
+  filter: brightness(0.9);
+}
