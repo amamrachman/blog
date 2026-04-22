@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
+import Image from "@tiptap/extension-image";
 import type { JSONContent } from "@tiptap/react";
 import { fetchPostBySlug, deletePost } from "@/api/client";
 import type { Post } from "@/types";
@@ -20,13 +21,23 @@ export default function PostDetail() {
   const [parsedContent, setParsedContent] = useState<JSONContent | null>(null);
 
   const contentEditor = useEditor({
-    extensions: [
-      StarterKit,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-    ],
-    content: parsedContent || { type: "doc", content: [{ type: "paragraph" }] },
-    editable: false,
-  });
+  extensions: [
+    StarterKit,
+    TextAlign.configure({ types: ["heading", "paragraph"] }),
+    Image.configure({
+      allowBase64: true,
+      HTMLAttributes: {
+        class:
+          "rounded-lg border border-border shadow-sm max-w-full h-auto my-4",
+      },
+    }),
+  ],
+  content: parsedContent || {
+    type: "doc",
+    content: [{ type: "paragraph" }],
+  },
+  editable: false,
+});
 
   useEffect(() => {
     if (slug) {
